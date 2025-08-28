@@ -22,6 +22,8 @@ public class WeaponSO : ScriptableObject
     [field: SerializeField] public float attackRange { get; private set; }
 
     [field: SerializeField] public float damage { get; private set; }
+    
+    [field: SerializeField] public bool isMelee { get; private set; }
 
 
     private void OnEnable()

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public abstract class WeaponBase : MonoBehaviour
 {
@@ -12,162 +13,176 @@ public abstract class WeaponBase : MonoBehaviour
     [SerializeField] private TextMeshProUGUI ammoText;
     [SerializeField] private TextMeshProUGUI jamText;
 
-    internal Coroutine currentFireTimer;
-    internal bool isOnCoolDown;
-    internal WaitUntil coolDownEnforce;
-    internal WaitForSeconds ReloadTime;
-    internal float currentChargeTime;
+    protected PlayerController player;
+    protected Enemy _enemy;
+    private Coroutine currentFireTimer;
+    protected bool isOnCoolDown;
+    protected WaitUntil coolDownEnforce;
+    private WaitForSeconds ReloadTime;
+    private float currentChargeTime;
     internal bool isReloading;
     internal bool isJammed;
-
     internal int ammoLeft;
-    internal int maxAmmo;
-    internal bool hasAmmo;
-    internal float curDamage;
+    private int maxAmmo;
+    private bool hasAmmo = true;
+    internal float Damage;
     internal float curSpread;
+    internal bool _isMelee;
 
-    private void Awake()
+    protected virtual void Awake()
     {
         ReloadTime = new WaitForSeconds(weaponStats.reloadTime);
         ammoLeft = weaponStats.magSize;
         maxAmmo = weaponStats.maxAmmo;
-        curDamage = weaponStats.damage;
-        hasAmmo = true;
-        if(jamText != null)
+        Damage = weaponStats.damage;
+        _isMelee = weaponStats.isMelee;
+        
+        player ??= GetComponentInParent<PlayerController>();
+        _enemy ??= GetComponentInParent<Enemy>();
+
+        if (!_isMelee)
         {
             UpdateAmmo();
-            jamText.text = "";
+            if (jamText != null && player != null)
+            {
+                jamText.text = "";
+            }
+            isJammed = false;
         }
+        
+        if (player != null)
+        {
+            player.playerAttackAction += UpdateAmmo;
+        }
+        
+       
+        
         coolDownEnforce = new WaitUntil(() => !isOnCoolDown);
     }
-    // Start is called before the first frame update
-    void Start()
-    {
-      
-    }
 
-
-
-    // Update is called once per frame
-    void Update()
-    {
-     
-    }
-
-
-    public void startShooting()
+    public void startAttacking()
     {
         currentFireTimer = StartCoroutine(ReFireTimer());
     }
 
-    public void stopShooting()
+    public void stopAttacking()
     {
-        StopCoroutine(currentFireTimer);
-        float percent = currentChargeTime / weaponStats.chargeUpTime;
-        if (percent != 0) TryAttack(percent);
+        if (currentFireTimer != null)
+        {
+            StopCoroutine(currentFireTimer);
+            var percent = currentChargeTime / weaponStats.chargeUpTime;
+            if (percent != 0) TryAttack(percent);
+        }
     }
 
-    protected virtual void jamCheck()
+    private void jamCheck()
     {
-        var jamChance = UnityEngine.Random.Range(0f, 1000f);
-        var jamRate = weaponStats.jamRate * 1000;
+        var jamChance = Random.Range(0f, 1);
+        var jamRate = weaponStats.jamRate ;
 
-        if (jamChance < jamRate)
+        if (!(jamChance <= jamRate)) return;
+        if (player is not null)
         {
             jamText.text = "Jammed, press \"R\" to attempt fix";
-            isJammed = true;
         }
-        
+        isJammed = true;
     }
 
-    
+
     private IEnumerator CooldownTimer()
     {
         isOnCoolDown = true;
         yield return weaponStats.coolDownWait;
         isOnCoolDown = false;
     }
-    protected virtual void TryAttack(float percent)
+
+    private void TryAttack(float percent)
     {
-        jamCheck();
 
-        currentChargeTime = 0;
-        if (!CanAttack(percent) || isJammed == true) return;
+        if (!_isMelee)
+        {
+            if (ammoLeft > 0)
+            {
+                jamCheck();
+            }
+            currentChargeTime = 0;
+        
+            if (!CanAttack(percent) || isJammed) return;
 
-        if (ammoLeft > 0 && isReloading != true && isJammed != true)
+            if (ammoLeft > 0 && isReloading != true && isJammed != true)
+            {
+                Attack(percent);
+                ammoLeft--;
+                if (player is not null)
+                {
+                    ammoText.text = ammoLeft + " / " + maxAmmo;
+                }
+            }
+            else return;
+
+            if (maxAmmo == 0 && ammoLeft != 0)
+            {
+                hasAmmo = false;
+            }
+        }
+        else
         {
             Attack(percent);
-            ammoLeft--;
-            ammoText.text = ammoLeft.ToString() + " / " + maxAmmo.ToString();
         }
-        else return;
-        if (maxAmmo == 0 && ammoLeft != 0)
-        {
-            hasAmmo = false;
-        }
-
         StartCoroutine(CooldownTimer());
         if (weaponStats.isFullAuto && percent >= 1) currentFireTimer = StartCoroutine(ReFireTimer());
     }
-   
-    protected virtual IEnumerator TryReload()
+
+    private IEnumerator TryReload()
     {
-
-        if (ammoLeft == weaponStats.magSize && isJammed == false) yield break;
-        if (isJammed == true)
+        if (ammoLeft == weaponStats.magSize && isJammed == false || _isMelee) yield break;
+        if (isJammed)
         {
-            var jamFixed = UnityEngine.Random.Range(0f, 10f);
-            if (jamFixed < 7f)
-            {
-                jamText.text = "jam fixed";
-                jamText.text = "";
+            if (player is not null) jamText.text = "jam fixed";
 
-                if (ammoLeft != 0)
-                {
-                    ammoLeft--;
-                    UpdateAmmo();
-                }
-                isJammed = false;
-                yield break;
+            if (ammoLeft != 0)
+            {
+                ammoLeft--;
+                UpdateAmmo();
             }
-            else Debug.Log("fix failed");
+
+            isJammed = false;
+
+            yield return new  WaitForSeconds (0.2f);
+            if (player is not null) jamText.text = "";
             yield break;
         }
-        if (isReloading == true) yield break;
-        isReloading = true;
-        yield return ReloadTime;
-        if (hasAmmo == true && maxAmmo >= 0 && isJammed == false && isReloading == true)
-        {
-            if (ammoLeft == 0)
-            {
-                maxAmmo -= weaponStats.magSize + ammoLeft;
-                ammoLeft = weaponStats.magSize;
-                hasAmmo = true;
-                isReloading = false;
-                UpdateAmmo();
 
-            }
-            else if (ammoLeft >= (weaponStats.magSize - ammoLeft))
+        if (isReloading) yield break;
+        isReloading = true;
+        
+        yield return ReloadTime;
+        
+        
+        if (hasAmmo && maxAmmo >= 0 && !isJammed && isReloading)
+        {
+            var missing = weaponStats.magSize - ammoLeft;
+
+            if (maxAmmo >= missing)
             {
-                maxAmmo = (maxAmmo - weaponStats.magSize) + ammoLeft;
-                ammoLeft = weaponStats.magSize;
-                hasAmmo = true;
-                isReloading = false;
-                UpdateAmmo();
+                // enough reserve to fully reload
+                ammoLeft += missing;
+                maxAmmo -= missing;
             }
-            else if (ammoLeft <= (weaponStats.magSize - ammoLeft))
+            else
             {
-                maxAmmo = 0;
+                // not enough reserve to fill mag
                 ammoLeft += maxAmmo;
-                hasAmmo = false;
-                isReloading = false;
-                UpdateAmmo();
+                maxAmmo = 0;
+                hasAmmo = false; // no reserve left
             }
+            
         }
+        UpdateAmmo();
         isReloading = false;
+
     }
     
-   
     private IEnumerator ReFireTimer()
     {
         print("waiting for cooldown");
@@ -179,20 +194,22 @@ public abstract class WeaponBase : MonoBehaviour
             currentChargeTime += Time.deltaTime;
             yield return null;
         }
+
         TryAttack(1);
         yield return null;
-
     }
 
-    
-    public virtual void UpdateAmmo()
+
+    private void UpdateAmmo()
     {
-        ammoText.text = ammoLeft.ToString() + " / " + maxAmmo.ToString();
+        if (player is not null) ammoText.text = ammoLeft + " / " + maxAmmo;
     }
-    protected virtual bool CanAttack(float percent)
+
+    private bool CanAttack(float percent)
     {
         return !isOnCoolDown && percent >= weaponStats.minChargePercent;
     }
+
     protected abstract void Attack(float percent);
 
     public IEnumerator GetTryReload()
@@ -200,92 +217,5 @@ public abstract class WeaponBase : MonoBehaviour
         return TryReload();
     }
 
-    public abstract class EnemyWeapons : WeaponBase
-    {
-
-       
-        protected override void jamCheck()
-        {
-            var jamChance = UnityEngine.Random.Range(0f, 1000f);
-            var jamRate = weaponStats.jamRate * 1000;
-
-            if (jamChance < jamRate)
-            {
-                isJammed = true;
-            }
-        }
-        protected override void TryAttack(float percent)
-        {
-            jamCheck();
-
-            currentChargeTime = 0;
-            if (!CanAttack(percent) || isJammed == true) return;
-
-            if (ammoLeft > 0 && isReloading != true && isJammed != true)
-            {
-                Attack(percent);
-                ammoLeft--;
-            }
-            else return;
-            if (maxAmmo == 0 && ammoLeft != 0)
-            {
-                hasAmmo = false;
-            }
-
-            StartCoroutine(CooldownTimer());
-            if (weaponStats.isFullAuto && percent >= 1) currentFireTimer = StartCoroutine(ReFireTimer());
-        }
-
-        protected override IEnumerator TryReload()
-        {
-            if (ammoLeft == weaponStats.magSize && isJammed == false) yield break;
-            if (isJammed == true)
-            {
-                var jamFixed = UnityEngine.Random.Range(0f, 10f);
-                if (jamFixed < 7f)
-                {
-         
-                    if (ammoLeft != 0)
-                    {
-                        ammoLeft--;
-                    }
-                    isJammed = false;
-                    yield break;
-                }
-                else 
-                yield break;
-            }
-            if (isReloading == true) yield break;
-            isReloading = true;
-            yield return ReloadTime;
-            if (hasAmmo == true && maxAmmo >= 0 && isJammed == false && isReloading == true)
-            {
-                if (ammoLeft == 0)
-                {
-                    maxAmmo -= weaponStats.magSize + ammoLeft;
-                    ammoLeft = weaponStats.magSize;
-                    hasAmmo = true;
-                    isReloading = false;
-                }
-
-                
-                else if (ammoLeft >= (weaponStats.magSize - ammoLeft))
-                {
-                    maxAmmo = (maxAmmo - weaponStats.magSize) + ammoLeft;
-                    ammoLeft = weaponStats.magSize;
-                    hasAmmo = true;
-                    isReloading = false;
-                }
-                else if (ammoLeft <= (weaponStats.magSize - ammoLeft))
-                {
-                    maxAmmo = 0;
-                    ammoLeft += maxAmmo;
-                    hasAmmo = false;
-                    isReloading = false;
-                }
-            }
-            isReloading = false;
-        }
-    }
-   
+ 
 }
