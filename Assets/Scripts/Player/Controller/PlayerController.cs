@@ -11,31 +11,30 @@ public class PlayerController : MonoBehaviour, Controls.IPlayerActions, IDamagea
     internal bool IsWalking;
     internal bool IsRunning;
     private bool weaponShootToogle;
-   [SerializeField] WeaponBase curWeapon;
+    [SerializeField] WeaponBase curWeapon;
     internal Vector3 mousePos;
     internal Vector3 localMousePos;
 
-    public  Action playerAttackAction;
-    public  Action playerHitAction;
-    
+    public Action playerAttackAction;
+    public Action playerHitAction;
+    public Action playerOnDeath;
+
     private Camera _camera;
     public float WalkSpeed { get; private set; }
-    public float RunSpeed  { get; private set; }
+    public float RunSpeed { get; private set; }
     public Vector2 Movement { get; private set; }
-    private float MaxSprintTimer;
-    private bool RefuelSprint;
+    internal float MaxSprintTimer;
+    internal bool RefuelSprint;
     private Coroutine sprintCoolDown;
-    
-    
-    
     internal float Health;
     internal float SprintTimer;
-    
+    internal float enemiesKilled;
+
     private void Awake()
     {
         Rb2d = GetComponent<Rigidbody2D>();
         SetUpCharacters();
-
+        EnemySpawner.OnDeath += enemyKilled;
     }
 
     private void Start()
@@ -49,7 +48,7 @@ public class PlayerController : MonoBehaviour, Controls.IPlayerActions, IDamagea
     {
         WalkSpeed = _playerStatsSO.walkSpeed;
         RunSpeed = _playerStatsSO.runSpeed;
-        Health = _playerStatsSO.health;
+        Health = _playerStatsSO.health + GameModifiers.playerHealthModifer * 10;
     }
 
     private void Update()
@@ -70,7 +69,7 @@ public class PlayerController : MonoBehaviour, Controls.IPlayerActions, IDamagea
     }
 
     private void UpdateRotation()
-    { 
+    {
         localMousePos = _camera.ScreenToWorldPoint(mousePos);
         var rotation = localMousePos - transform.position;
         var rotZ = Mathf.Atan2(rotation.y, rotation.x) * Mathf.Rad2Deg;
@@ -97,8 +96,13 @@ public class PlayerController : MonoBehaviour, Controls.IPlayerActions, IDamagea
     private void OnDisablePlayer()
     {
         _controls.Player.Disable();
+        enemiesKilled = 0;
     }
 
+    public void enemyKilled()
+    {
+        enemiesKilled++;
+    }
 
     public void OnMove(InputAction.CallbackContext context)
     {
@@ -125,15 +129,14 @@ public class PlayerController : MonoBehaviour, Controls.IPlayerActions, IDamagea
         else curWeapon.stopAttacking();
     }
 
-    
 
     public void OnInteract(InputAction.CallbackContext context)
     {
     }
-    
+
     public void OnRunning(InputAction.CallbackContext context)
     {
-        IsRunning = true; 
+        IsRunning = true;
         IsWalking = false;
         RefuelSprint = false;
         if (!context.canceled && !(SprintTimer <= 0)) return;
@@ -160,6 +163,7 @@ public class PlayerController : MonoBehaviour, Controls.IPlayerActions, IDamagea
         {
             curWeapon.StartCoroutine(curWeapon.GetTryReload());
         }
+
         playerAttackAction.Invoke();
     }
 
@@ -172,6 +176,7 @@ public class PlayerController : MonoBehaviour, Controls.IPlayerActions, IDamagea
         if (Health <= 0)
         {
             gameObject.SetActive(false);
+            playerOnDeath?.Invoke();
         }
     }
 }

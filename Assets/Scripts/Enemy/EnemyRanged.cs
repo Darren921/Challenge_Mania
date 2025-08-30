@@ -1,9 +1,12 @@
 using System;
+using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class EnemyRanged : Enemy
 {
     private bool isAttacking;
+
 
     private void OnDisable()
     {
@@ -19,7 +22,7 @@ public class EnemyRanged : Enemy
     protected override void Attack()
     {
         target = playerInLOS ? transform.position : player.transform.position;
-        
+
         agent.SetDestination(target);
 
         if (curWeapon.ammoLeft == 0 || curWeapon.isJammed)
@@ -27,21 +30,32 @@ public class EnemyRanged : Enemy
             StartCoroutine(curWeapon.GetTryReload());
             isAttacking = false;
         }
-       
+
         if (!isAttacking && playerInLOS)
         {
-            isAttacking = true;
+            StartCoroutine(Fire());
             curWeapon.startAttacking();
         }
-        if (!playerInSightRange || !playerInLOS)
+
+        if (!isAttacking || !playerInSightRange || !playerInLOS)
         {
             isAttacking = false;
             curWeapon.stopAttacking();
         }
-        
     }
 
- 
+    private IEnumerator Fire()
+    {
+        isAttacking = true;
+        yield return new WaitForSeconds(AttackRate);
+        isAttacking = false;
+    }
+
+    protected override void SetUpType()
+    {
+        _type = EnemyType.Ranged;
+    }
+
 
     public override void TakeDamage(float damage)
     {

@@ -6,7 +6,6 @@ using UnityEngine;
 
 public class Projectile : MonoBehaviour
 {
-  
     [SerializeField] private float shootForce;
     private Rigidbody2D rb;
     private Camera cam;
@@ -20,6 +19,7 @@ public class Projectile : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         cam = Camera.main;
     }
+
     public void Init(float chargePercent)
     {
         if (isPlayer)
@@ -29,8 +29,7 @@ public class Projectile : MonoBehaviour
             var rotation = transform.position - mousePos;
             var rot = Mathf.Atan2(rotation.y, rotation.x) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.Euler(0, 0, rot);
-            FireDirection = new Vector2(direction.x, direction.y).normalized;  
-            
+            FireDirection = new Vector2(direction.x, direction.y).normalized;
         }
         else
         {
@@ -41,10 +40,12 @@ public class Projectile : MonoBehaviour
             transform.rotation = Quaternion.Euler(0, 0, rot);
             FireDirection = new Vector2(direction.x, direction.y).normalized;
         }
+
         rb.linearVelocity = Vector2.zero;
         rb.angularVelocity = 0f;
         rb.AddForce(shootForce * chargePercent * FireDirection, ForceMode2D.Impulse);
     }
+
     private void OnCollisionEnter2D(Collision2D collision)
     {
         rb.linearVelocity = Vector2.zero;
@@ -55,7 +56,6 @@ public class Projectile : MonoBehaviour
         }
         else if (collision.gameObject.CompareTag("Enemy"))
         {
-            
             collision.gameObject.GetComponent<Enemy>().TakeDamage(damage);
             ObjectPoolManager.ReturnObjectToPool(gameObject);
         }
@@ -65,10 +65,8 @@ public class Projectile : MonoBehaviour
             {
                 collision.gameObject.GetComponent<PlayerController>().TakeDamage(damage);
             }
+
             ObjectPoolManager.ReturnObjectToPool(gameObject);
         }
     }
-
 }
-
-

@@ -18,6 +18,11 @@ public class EnemyMelee : Enemy
         
     }
 
+    protected override void SetUpType()
+    {
+        _type = EnemyType.Melee;
+    }
+
     public override void TakeDamage(float damage)
     {
         _rb2D.linearVelocity = Vector3.zero;

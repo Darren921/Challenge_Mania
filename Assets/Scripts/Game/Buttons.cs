@@ -6,7 +6,12 @@ public class Buttons : MonoBehaviour
    
    public void LoadGame()
    {
-      SceneManager.LoadScene("Main");
+      SceneManager.LoadScene("ChallengeSelection");
+   }
+
+   public void ToMainMenu()
+   {
+      SceneManager.LoadScene("TitleScreen");
    }
    
    public void QuitGame()

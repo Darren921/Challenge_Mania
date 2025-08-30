@@ -22,6 +22,7 @@ public class ObjectPoolManager : MonoBehaviour
 
     private void Awake()
     {
+        ObjectPool.Clear();
         SetUpEmpties();
     }
 
@@ -45,7 +46,7 @@ public class ObjectPoolManager : MonoBehaviour
             ObjectPool.Add(pool);
         }
 
-        var spawnableObj = pool.InactiveObjects.FirstOrDefault();
+        var spawnableObj = pool.InactiveObjects.FirstOrDefault(o => o is not null);
 
         if (spawnableObj is null)
         {
@@ -58,6 +59,11 @@ public class ObjectPoolManager : MonoBehaviour
         }
         else
         {
+            if (spawnableObj == null || spawnableObj.Equals(null))
+            {
+                pool.InactiveObjects.Remove(spawnableObj);
+                return SpawnObject(objToSpawn, SpawnPos, SpawnRot, poolType); // retry
+            }
             spawnableObj.transform.position = SpawnPos;
             spawnableObj.transform.rotation = SpawnRot;
             pool.InactiveObjects.Remove(spawnableObj);

@@ -25,6 +25,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
     private  float AttackRange;
     protected LayerMask whatIsPlayer, whatIsWall, whatIsBoth;
     protected bool Generated;
+   
 
     public  enum EnemyType
     {
@@ -37,12 +38,18 @@ public abstract class Enemy : MonoBehaviour, IDamageable
         Pursuit,
         Attack 
     }
-    
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
 
+    protected int AttackRate = 2;
+    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    protected EnemyType _type;
     private void OnEnable()
     {
-        _health = stats.health;
+        _health = _type switch
+        {
+            EnemyType.Melee => stats.health + GameModifiers.enemyHealthModifer * 10,
+            EnemyType.Ranged => stats.health * 0.25f + GameModifiers.enemyHealthModifer * 10,
+            _ => _health
+        };
         SightRange = stats.SightRange;
         AttackRange = stats.AttackRange;
         _currentState = State.Patrol;
@@ -53,10 +60,15 @@ public abstract class Enemy : MonoBehaviour, IDamageable
         player = FindFirstObjectByType<PlayerController>();
         agent = GetComponent<NavMeshAgent>();
         curWeapon = GetComponentInChildren<WeaponBase>();
-        
+        player.playerOnDeath += OnThisDisable;
+
     }
 
-    
+    private void OnThisDisable()
+    {
+        enabled = false;
+    }
+
 
     protected void Awake()
     {
@@ -156,6 +168,8 @@ public abstract class Enemy : MonoBehaviour, IDamageable
     
     protected abstract void Attack();
 
+    protected abstract void SetUpType();
+
     protected void UpdateRotation()
     {
         var rotation = Vector3.zero;
@@ -174,7 +188,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
             var rotZ = Mathf.Atan2(rotation.y, rotation.x) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.Euler(0f, 0f, rotZ);
         }
-        print("rotating");
+//        print("rotating");
    
     }
     
