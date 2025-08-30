@@ -42,6 +42,8 @@ public abstract class Enemy : MonoBehaviour, IDamageable
     protected int AttackRate = 2;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     protected EnemyType _type;
+    private EnemySpawner enemySpawner;
+
     private void OnEnable()
     {
         _health = _type switch
@@ -61,7 +63,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
         agent = GetComponent<NavMeshAgent>();
         curWeapon = GetComponentInChildren<WeaponBase>();
         player.playerOnDeath += OnThisDisable;
-
+        enemySpawner = FindFirstObjectByType<EnemySpawner>();
     }
 
     private void OnThisDisable()
@@ -78,58 +80,63 @@ public abstract class Enemy : MonoBehaviour, IDamageable
 
     private void Start()
     {
-   
+        
     }
 
-    protected void Update()
+protected void Update()
+{
+    playerInRange = Physics2D.OverlapCircle(transform.position, AttackRange, whatIsPlayer);
+    playerInSightRange = Physics2D.OverlapCircle(transform.position, SightRange, whatIsPlayer);
+    hit = Physics2D.Linecast(transform.position, player.transform.position, whatIsBoth);
+    playerInLOS = hit.collider.gameObject.CompareTag("Player") && playerInSightRange;
+
+    // Check for state transitions and update state
+    if (GameManager.CurGameMode == GameManager.GameMode.Kill && enemySpawner.curEnemyCount > 5)
     {
-        playerInRange = Physics2D.OverlapCircle(transform.position, AttackRange, whatIsPlayer);
-        playerInSightRange = Physics2D.OverlapCircle(transform.position, SightRange, whatIsPlayer);
-        hit = Physics2D.Linecast(transform.position, player.transform.position, whatIsBoth);
-        playerInLOS = hit.collider.gameObject.CompareTag("Player") && playerInSightRange;
-        
-       if(GameManager.CurGameMode == GameManager.GameMode.Kill)
-       {
-           if (!playerInRange && !playerInSightRange) _currentState = State.Patrol;
-           if (playerInSightRange && !playerInRange) _currentState = State.Pursuit;
-           if (playerInRange && playerInSightRange) _currentState = State.Attack;
-       }
-       else
-       {
-           if (!playerInRange && !playerInSightRange) _currentState = State.Pursuit;
-           if (playerInRange && playerInSightRange) _currentState = State.Attack;
-       }
-     
-        
-       
-        
-        
-        
-        
-        if (_health >= 0)
-        {
-            switch (_currentState)
-            {
-                case State.Pursuit:
-                    Pursuit();
-                    break;
-                case State.Patrol:
-                    Patrol();
-                    break;
-                case State.Attack:
-                    Attack();
-                    break;
-                default:
-                    Debug.LogWarning("Null state");
-                   break;
-            }
-        }
-        
-        UpdateRotation();
-
-        
+        if (!playerInRange && !playerInSightRange) SwitchState(State.Patrol);
+        if (playerInSightRange && !playerInRange) SwitchState(State.Pursuit);
+        if(playerInSightRange && playerInRange) SwitchState(State.Attack);
+    }
+    else
+    {
+        if (!playerInRange && !playerInSightRange) SwitchState(State.Pursuit);
+        else SwitchState(State.Attack);
     }
 
+    if (_health >= 0)
+    {
+        switch (_currentState)
+        {
+            case State.Pursuit:
+                Pursuit();
+                break;
+            case State.Patrol:
+                Patrol();
+                break;
+            case State.Attack:
+                Attack();
+                break;
+            default:
+                Debug.LogWarning("Null state");
+                break;
+        }
+    }
+
+    UpdateRotation();
+}
+
+private void SwitchState(State newState)
+{
+    if (_currentState == newState) return; // Don't switch if we're already in the new state
+
+    _currentState = newState;
+
+    // Clear the path whenever the state changes, so the new state's logic can take over
+    if (agent.hasPath)
+    {
+        agent.ResetPath();
+    }
+}
 
     private void Patrol()
     {
@@ -193,4 +200,5 @@ public abstract class Enemy : MonoBehaviour, IDamageable
     }
     
     public abstract void TakeDamage(float damage);
+    
 }

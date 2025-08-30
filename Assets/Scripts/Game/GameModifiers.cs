@@ -67,20 +67,23 @@ public class GameModifiers : MonoBehaviour
                        0.50f),
                LEnemyDamageModifer = Mathf.Clamp((float)Math.Round(Random.Range(-stageNumber * 1.25f, stageNumber * 1.25f), 2), -0.50f,
                        0.50f),
-               LEnemyCountModifer = (int)Mathf.Clamp(Mathf.RoundToInt(Random.Range(-stageNumber * 5f, stageNumber * 5f)), -9f, 10f),
+               LEnemyCountModifer = (int)Mathf.Clamp(Mathf.RoundToInt(Random.Range(-stageNumber * 5f, stageNumber * 5f)), -8f, 10f),
            
            };
-           var overallModifier = newModifierSet.LPlayerDamageModifer + newModifierSet.LPlayerHealthModifer - (newModifierSet.LEnemyCountModifer * 0.5f +  newModifierSet.LEnemyDamageModifer + newModifierSet.LEnemyHealthModifer);
+
+           var playerPower = newModifierSet.LPlayerDamageModifer + newModifierSet.LPlayerHealthModifer;
+           var enemyPower = newModifierSet.LEnemyCountModifer * 0.3f + newModifierSet.LEnemyDamageModifer + newModifierSet.LEnemyHealthModifer;
+           
+           var overallModifier = enemyPower - playerPower;
            print(overallModifier);
            newModifierSet.overallScoreModifer = overallModifier switch
            {
-               < -1.5f => stageNumber * 1.25f,
-               >= -1.5f and < 1.39f => stageNumber * 1, 
-               >= 1.4f and <=2 => stageNumber * 0.8f,
-               >= 2 => stageNumber * 0.5f,
-               _ => newModifierSet.overallScoreModifer
+               >= 2f => stageNumber * 1.5f,
+               >= 1f => stageNumber * 1.25f,
+               > -1f => stageNumber * 1.0f,
+               > -2f => stageNumber * 0.8f,
+               _ => stageNumber * 0.5f
            };
-           
 
            _modiferSets.Add(newModifierSet);
         }

@@ -28,7 +28,7 @@ public class PlayerController : MonoBehaviour, Controls.IPlayerActions, IDamagea
     private Coroutine sprintCoolDown;
     internal float Health;
     internal float SprintTimer;
-    internal float enemiesKilled;
+    internal int enemiesKilled;
 
     private void Awake()
     {
@@ -97,6 +97,7 @@ public class PlayerController : MonoBehaviour, Controls.IPlayerActions, IDamagea
     {
         _controls.Player.Disable();
         enemiesKilled = 0;
+        StopAllCoroutines();
     }
 
     public void enemyKilled()

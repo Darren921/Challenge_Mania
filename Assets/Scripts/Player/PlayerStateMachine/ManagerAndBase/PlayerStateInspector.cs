@@ -1,7 +1,7 @@
-using System.Globalization;
+/*using System.Globalization;
 using UnityEditor;
 
-[CustomEditor(typeof(PlayerStateManager))]
+[/*CustomEditor(typeof(PlayerStateManager))]
 public class PlayerStateManagerInspector : Editor
 {
     public override void OnInspectorGUI()
@@ -13,5 +13,5 @@ public class PlayerStateManagerInspector : Editor
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Current State", manager.CurrentStateName, EditorStyles.boldLabel);
 
-    }
-}
+    }#1#
+}*/

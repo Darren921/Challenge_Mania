@@ -15,7 +15,7 @@ public class EnemySpawner : MonoBehaviour
     private int RangeLimit;
 
     internal int _curSpawnCount;
-
+    private PlayerController player;
     [SerializeField] private GameObject[] _enemiesList;
     bool Spawning;
     public static Action OnSpawn;
@@ -32,8 +32,13 @@ public class EnemySpawner : MonoBehaviour
     {
         AvailableSpawns.AddRange(spawnAreas);
         GameManager.GameStart += CheckGameMode;
-        var Player = FindFirstObjectByType<PlayerController>();
-        Player.playerOnDeath += OnThisDisable;
+        player = FindFirstObjectByType<PlayerController>();
+        player.playerOnDeath += OnThisDisable;
+    }
+
+    private void OnEnable()
+    {
+        curEnemyCount = 0;
     }
 
     private void OnThisDisable()
@@ -76,8 +81,9 @@ public class EnemySpawner : MonoBehaviour
         {
             _curSpawnCount--;
         }
+        
 
-        if (curEnemyCount == 0 && _curSpawnCount > 0)
+        if (curEnemyCount == 0 && player.enemiesKilled == _curSpawnCount && _curSpawnCount > 0)
         {
             GameManager.GameEnd?.Invoke();
         }
@@ -142,11 +148,10 @@ public class EnemySpawner : MonoBehaviour
                     ObjectPoolManager.PoolType.Enemies);
                 CurNumberofSpawns++;
             }
+            curEnemyCount++;
+            _curSpawnCount++;
+            GameManager.ObjectiveUpdate?.Invoke();
         }
-
-        curEnemyCount++;
-        _curSpawnCount++;
-        GameManager.ObjectiveUpdate?.Invoke();
         yield return new WaitForSeconds(SpawnTime);
         Spawning = false;
     }

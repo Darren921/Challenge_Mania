@@ -26,6 +26,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] TextMeshProUGUI ContinueOrRestartText;
     [SerializeField] TextMeshProUGUI ScoreText;
 
+    [SerializeField] private GameObject PauseMenu;
 
     private void Start()
     {
@@ -42,6 +43,16 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
+    }
+
+    public void OpenPauseMenu()
+    {
+        PauseMenu.SetActive(true);
+    }
+
+    public void ClosePauseMenu()
+    {
+        PauseMenu.SetActive(false);
     }
 
     private void OnObjectiveUpdate()
