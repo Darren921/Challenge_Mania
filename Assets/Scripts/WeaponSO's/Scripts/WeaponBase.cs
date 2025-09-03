@@ -28,9 +28,11 @@ public abstract class WeaponBase : MonoBehaviour
     internal float Damage;
     internal float curSpread;
     internal bool _isMelee;
+    protected AudioSource audioSource;
 
     protected virtual void Awake()
     {
+        audioSource = gameObject.GetComponent<AudioSource>();
         ReloadTime = new WaitForSeconds(weaponStats.reloadTime);
         ammoLeft = weaponStats.magSize;
         maxAmmo = weaponStats.maxAmmo;
