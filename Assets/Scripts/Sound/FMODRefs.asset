@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8bae7960f4bf3104480d9cb4cb88c0f3, type: 3}
+  m_Name: FMODRefs
+  m_EditorClassIdentifier: 
+  persistEventRefs:
+  - name: MainMusic
+    eventRef:
+      Guid:
+        Data1: 1898752005
+        Data2: 1327448657
+        Data3: 1857408690
+        Data4: -1816647917
+      Path: event:/Music/MusicPlayer
+  sceneEventRefs:
+  - name: GS
+    eventRef:
+      Guid:
+        Data1: -1611804367
+        Data2: 1120971391
+        Data3: 503049856
+        Data4: -1452271425
+      Path: event:/Shoot

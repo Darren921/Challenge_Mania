@@ -10,7 +10,7 @@ public class AR : WeaponBase
     {
         var rb = ObjectPoolManager.SpawnObject(normalBullet.gameObject, firingPostition.position, Quaternion.identity,
             ObjectPoolManager.PoolType.Gameobject);
-        audioSource.Play(); 
+        MusicPlayer.instance.PlayOneShot(FMODEvents.Instance.Gunshots,transform.position);
         var projectile = rb.GetComponent<Projectile>();
         projectile.isPlayer = player is not null;
         if (projectile.isPlayer)

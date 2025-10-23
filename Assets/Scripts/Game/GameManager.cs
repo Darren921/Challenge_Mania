@@ -38,6 +38,7 @@ public class GameManager : MonoBehaviour
         GameEnd += onGameEnd;
         ObjectiveUpdate += OnObjectiveUpdate;
         player.playerOnDeath += onGameEnd;
+        
     }
 
 
